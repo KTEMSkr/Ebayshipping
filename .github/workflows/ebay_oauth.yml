@@ -1,0 +1,27 @@
+name: Fetch eBay OAuth Token
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  get-ebay-token:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Fetch eBay OAuth Token
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+        run: python get_ebay_oauth_token.py
