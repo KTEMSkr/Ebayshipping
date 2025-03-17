@@ -1,0 +1,26 @@
+name: Sync eBay Orders to Notion
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"  # 30분마다 실행
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  sync-ebay-orders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch eBay Orders & Send to Notion
+        env:
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+        run: python input\ test.py  # Python 코드 실행
