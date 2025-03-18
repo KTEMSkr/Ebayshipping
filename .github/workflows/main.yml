@@ -21,6 +21,9 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: 필수 패키지 설치  # ✅ `requests` 설치 추가
+        run: pip install requests
+
       - name: eBay 주문 데이터 가져오기
         env:
           EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
