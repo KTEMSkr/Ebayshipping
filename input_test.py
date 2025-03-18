@@ -1,16 +1,19 @@
 import requests
 import os
 
-# ✅ GitHub Secrets에서 eBay API Access Token 가져오기
+# ✅ GitHub Secrets에서 Access Token 가져오기
 ACCESS_TOKEN = os.getenv("EBAY_USER_TOKEN")
 
-if not ACCESS_TOKEN:
-    raise ValueError("❌ ERROR: `EBAY_USER_TOKEN`이 설정되지 않았습니다!")
+# 🔥 디버깅: `ACCESS_TOKEN` 값 확인
+if not ACCESS_TOKEN or ACCESS_TOKEN.strip() == "":
+    raise ValueError("❌ ERROR: 환경 변수 `EBAY_USER_TOKEN`이 설정되지 않았습니다!")
 
-# ✅ eBay 주문 API URL (예제: 주문 목록 조회)
+print(f"✔️ ACCESS_TOKEN (앞 10자리): {ACCESS_TOKEN[:10]}**********")  # 보안상 앞 10자리만 출력
+
+# ✅ eBay 주문 API URL
 ORDER_API_URL = "https://api.ebay.com/sell/fulfillment/v1/order"
 
-# ✅ 헤더 설정 (공백 방지)
+# ✅ 헤더 설정
 headers = {
     "Authorization": f"Bearer {ACCESS_TOKEN}".strip(),
     "Content-Type": "application/json"
@@ -20,7 +23,7 @@ headers = {
 if " " in ACCESS_TOKEN:
     raise ValueError(f"❌ ERROR: `ACCESS_TOKEN` 값에 공백이 포함됨! (길이: {len(ACCESS_TOKEN)})")
 
-# ✅ eBay 주문 조회 요청 보내기
+# ✅ eBay 주문 데이터 요청
 response = requests.get(ORDER_API_URL, headers=headers)
 
 # ✅ 응답 확인
