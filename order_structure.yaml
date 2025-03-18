@@ -1,0 +1,98 @@
+orders:
+  - orderId
+  - legacyOrderId
+  - creationDate
+  - lastModifiedDate
+  - orderFulfillmentStatus
+  - orderPaymentStatus
+  - sellerId
+  - buyer:
+      username
+      taxAddress:
+        city
+        stateOrProvince
+        postalCode
+        countryCode
+      buyerRegistrationAddress:
+        fullName
+        contactAddress:
+          addressLine1
+          city
+          stateOrProvince
+          postalCode
+          countryCode
+        primaryPhone:
+          phoneNumber
+        email
+  - pricingSummary:
+      priceSubtotal:
+        value
+        currency
+      deliveryCost:
+        value
+        currency
+      total:
+        value
+        currency
+  - cancelStatus:
+      cancelState
+      cancelRequests[]
+  - paymentSummary:
+      totalDueSeller:
+        value
+        currency
+      refunds[]
+      payments[]:
+        paymentMethod
+        paymentReferenceId
+        paymentDate
+        amount:
+          value
+          currency
+        paymentStatus
+  - fulfillmentStartInstructions[]:
+      fulfillmentInstructionsType
+      ebaySupportedFulfillment
+      shippingStep:
+        shipTo:
+          fullName
+          contactAddress:
+            addressLine1
+            city
+            stateOrProvince
+            postalCode
+            countryCode
+          primaryPhone:
+            phoneNumber
+          email
+        shippingServiceCode
+  - fulfillmentHrefs[]
+  - lineItems[]:
+      lineItemId
+      legacyItemId
+      title
+      lineItemCost:
+        value
+        currency
+      quantity
+      total:
+        value
+        currency
+      deliveryCost:
+        shippingCost:
+          value
+          currency
+      ebayCollectAndRemitTaxes[]:
+        taxType
+        amount:
+          value
+          currency
+        collectionMethod
+  - ebayCollectAndRemitTax
+  - salesRecordReference
+  - totalFeeBasisAmount:
+      value
+      currency
+  - totalMarketplaceFee:
+      value
+      currency
