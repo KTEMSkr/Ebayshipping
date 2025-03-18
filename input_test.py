@@ -1,45 +1,35 @@
 import requests
 import os
 
-# ✅ 환경 변수에서 가져오기
+# ✅ GitHub Actions에서 환경 변수 가져오기
 ACCESS_TOKEN = os.getenv("EBAY_USER_TOKEN")
+ORDER_API_URL = "https://api.ebay.com/sell/fulfillment/v1/order"  # eBay 주문 API 엔드포인트
 
-
-# 🔥 디버깅: ACCESS_TOKEN 확인
+# 🔥 디버깅: `ACCESS_TOKEN` 값이 정상적으로 불러와졌는지 확인
 if not ACCESS_TOKEN or ACCESS_TOKEN.strip() == "":
     raise ValueError("❌ ERROR: 환경 변수 `EBAY_USER_TOKEN`이 설정되지 않았습니다!")
 
+if not ACCESS_TOKEN.startswith("v^1.1"):
+    raise ValueError("❌ ERROR: ACCESS_TOKEN 값이 올바르지 않습니다! 다시 확인하세요.")
+
 print(f"✔️ ACCESS_TOKEN (앞 10자리): {ACCESS_TOKEN[:10]}**********")  # 보안상 앞 10자리만 출력
 
-
-import requests
-
-url = "https://api.ebay.com/identity/v1/oauth2/token"
+# ✅ `Authorization` 헤더 설정
 headers = {
-    "Authorization": f"Bearer {ACCESS_TOKEN}",
-    "Content-Type": "application/json"
-}
-response = requests.get(url, headers=headers)
-
-print("🔍 eBay API 응답 코드:", response.status_code)
-print("🔍 eBay API 응답 내용:", response.json())
-
-# ✅ eBay 주문 API URL
-ORDER_API_URL = "https://api.ebay.com/sell/fulfillment/v1/order"
-
-# ✅ 요청 헤더 설정
-headers = {
-    "Authorization": f"Bearer {ACCESS_TOKEN}",
+    "Authorization": f"Bearer {ACCESS_TOKEN}".strip(),  # 🔥 `strip()` 추가 (공백 방지)
     "Content-Type": "application/json"
 }
 
-# ✅ API 요청 실행
+# 🔥 디버깅: Authorization 값 확인
+if " " in ACCESS_TOKEN:
+    raise ValueError(f"❌ ERROR: `ACCESS_TOKEN` 값에 공백이 포함됨! (길이: {len(ACCESS_TOKEN)})")
+
+# ✅ eBay 주문 목록 요청
 response = requests.get(ORDER_API_URL, headers=headers)
 
-# ✅ 응답 확인
+# 🔍 API 응답 처리
 if response.status_code == 200:
-    orders = response.json()
-    print("✔️ eBay 주문 목록 가져오기 성공:", orders)
+    print("✅ eBay 주문 목록:", response.json())  # JSON 응답 출력
 else:
-
-    print("❌ eBay 주문 목록 가져오기 실패:", response.text)
+    print(f"❌ eBay API 호출 실패: {response.status_code}")
+    print(response.json())  # 오류 메시지 출력
