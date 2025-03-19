@@ -1,0 +1,29 @@
+name: Fetch eBay Orders
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 매일 00:00 UTC에 실행
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  fetch-orders:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v3
+
+      - name: Python 설정
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 필요한 패키지 설치
+        run: pip install requests requests-oauthlib
+
+      - name: eBay API에서 주문 가져오기
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+        run: python scripts/fetch_ebay_orders.py
