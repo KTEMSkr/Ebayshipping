@@ -1,9 +1,7 @@
 name: Fetch eBay Orders
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # 매일 00:00 UTC에 실행
-  workflow_dispatch:  # 수동 실행 가능
+  workflow_dispatch:
 
 jobs:
   fetch-orders:
@@ -22,7 +20,11 @@ jobs:
         run: pip install requests requests-oauthlib
 
       - name: 환경 변수 확인 (디버깅용)
-        run: env | grep EBAY  # ✅ 환경 변수 로드 여부 확인
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+        run: env | grep EBAY  # ✅ 환경 변수 출력하여 디버깅
 
       - name: eBay API에서 주문 가져오기
         env:
