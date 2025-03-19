@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 */2 * * *"  # ✅ 2시간마다 실행 (매 2시간 정각)
+    - cron: "0 */2 * * *"  # ✅ 2시간마다 실행
   workflow_dispatch:  # ✅ 수동 실행 가능
 
 jobs:
@@ -23,7 +23,13 @@ jobs:
           python-version: "3.10"
 
       - name: 📦 Install Dependencies
-        run: pip install requests python-dotenv
+        run: pip install requests python-dotenv jq
+
+      - name: 🔍 Debug GitHub Secrets (보안 중요: 실행 후 제거)
+        run: |
+          echo "🔍 EBAY_CLIENT_ID=${{ secrets.EBAY_CLIENT_ID }}"
+          echo "🔍 EBAY_CLIENT_SECRET=${{ secrets.EBAY_CLIENT_SECRET }}"
+          echo "🔍 EBAY_REFRESH_TOKEN=${{ secrets.EBAY_REFRESH_TOKEN }}"
 
       - name: 🔑 Fetch New eBay OAuth Token
         env:
@@ -33,14 +39,19 @@ jobs:
         run: |
           echo "🔄 eBay Access Token 갱신 중..."
           TOKEN_URL="https://api.ebay.com/identity/v1/oauth2/token"
-          
+
+          # ✅ base64 인코딩 오류 방지 (불필요한 개행 제거)
+          AUTH_HEADER=$(echo -n "${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}" | base64 | tr -d '\n')
+
           RESPONSE=$(curl -s -X POST $TOKEN_URL \
             -H "Content-Type: application/x-www-form-urlencoded" \
-            -H "Authorization: Basic $(echo -n "${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}" | base64)" \
+            -H "Authorization: Basic $AUTH_HEADER" \
             --data-urlencode "grant_type=refresh_token" \
             --data-urlencode "refresh_token=${EBAY_REFRESH_TOKEN}" \
             --data-urlencode "scope=https://api.ebay.com/oauth/api_scope")
-          
+
+          echo "📌 API 응답: $RESPONSE"  # ✅ 디버깅용 출력
+
           ACCESS_TOKEN=$(echo $RESPONSE | jq -r '.access_token')
 
           if [[ "$ACCESS_TOKEN" == "null" || -z "$ACCESS_TOKEN" ]]; then
@@ -49,8 +60,8 @@ jobs:
           fi
 
           echo "✅ eBay Access Token 갱신 완료!"
-          echo "::add-mask::$ACCESS_TOKEN"
-          echo "EBAY_USER_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
+          echo "::add-mask::$ACCESS_TOKEN"  # ✅ GitHub Actions에서 보안 마스킹 처리
+          echo "EBAY_USER_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV  # ✅ 환경 변수에 저장
 
   fetch-ebay-orders:
     name: "📦 Fetch eBay Orders"
