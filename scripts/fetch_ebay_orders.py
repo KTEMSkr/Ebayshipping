@@ -1,36 +1,46 @@
 import os
 import requests
+import json
+from requests_oauthlib import OAuth1
 
 # GitHub Actions 환경 변수 사용
-EBAY_USER_TOKEN = os.getenv("EBAY_USER_TOKEN")
+EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")  # Consumer Key (App ID)
+EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")  # Consumer Secret (Cert ID)
+EBAY_USER_TOKEN = os.getenv("EBAY_USER_TOKEN")  # eBay User Token (Auth’n’Auth 방식)
 
-# eBay Trading API 엔드포인트 (테스트용)
-EBAY_API_URL = "https://api.ebay.com/ws/api.dll"
+# eBay Fulfillment API 엔드포인트 (최신 주문 가져오기)
+EBAY_API_URL = "https://api.ebay.com/sell/fulfillment/v1/order"
 
-# 요청 헤더 설정
+# OAuth1 인증 설정 (Auth’n’Auth 방식 - Token Secret 없음)
+auth = OAuth1(
+    client_key=EBAY_CLIENT_ID,
+    client_secret=EBAY_CLIENT_SECRET,
+    resource_owner_key=EBAY_USER_TOKEN
+)
+
+# API 요청 헤더
 headers = {
-    "X-EBAY-API-SITEID": "0",
-    "X-EBAY-API-CALL-NAME": "GeteBayOfficialTime",
-    "X-EBAY-API-COMPATIBILITY-LEVEL": "967",
-    "Content-Type": "text/xml"
+    "Content-Type": "application/json",
+    "Accept": "application/json"
 }
 
-# 요청 바디 (GeteBayOfficialTime - 단순한 API 호출)
-xml_body = f"""
-<?xml version="1.0" encoding="utf-8"?>
-<GeteBayOfficialTimeRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-  <RequesterCredentials>
-    <eBayAuthToken>{EBAY_USER_TOKEN}</eBayAuthToken>
-  </RequesterCredentials>
-</GeteBayOfficialTimeRequest>
-"""
+# 최신 5개 주문 요청 (날짜 필터 없이 가져오기)
+params = {
+    "limit": 5,  # 최신 5개만 가져오기
+    "sort": "-creationDate"  # 최신 주문부터 정렬
+}
 
 # API 요청 실행
-response = requests.post(EBAY_API_URL, data=xml_body, headers=headers)
+response = requests.get(EBAY_API_URL, headers=headers, params=params, auth=auth)
 
-# API 연결 여부 확인
+# 응답 처리
 if response.status_code == 200:
-    print("✅ API 연결 성공!")
+    orders_data = response.json()  # JSON 변환
+    print("✅ 이베이 API 연결 성공!")
+
+    # JSON을 보기 좋게 출력
+    print(json.dumps(orders_data, indent=2, ensure_ascii=False))
 else:
-    print(f"❌ API 요청 실패: {response.status_code}")
-    print(response.text)  # 오류 메시지 확인
+    print(f"❌ 이베이 API 요청 실패: {response.status_code}")
+    print(response.text)
+    exit(1)
