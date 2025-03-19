@@ -7,6 +7,11 @@ EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
 EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
 EBAY_REFRESH_TOKEN = os.getenv("EBAY_REFRESH_TOKEN")
 
+print("🔍 디버깅: 환경 변수 확인")
+print(f"🔍 EBAY_CLIENT_ID: {'✅ 설정됨' if EBAY_CLIENT_ID else '❌ 없음'}")
+print(f"🔍 EBAY_CLIENT_SECRET: {'✅ 설정됨' if EBAY_CLIENT_SECRET else '❌ 없음'}")
+print(f"🔍 EBAY_REFRESH_TOKEN: {'✅ 설정됨' if EBAY_REFRESH_TOKEN else '❌ 없음'}")
+
 if not all([EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN]):
     print("❌ eBay API 인증 정보가 없습니다. 환경 변수를 확인하세요.")
     exit(1)
@@ -28,7 +33,14 @@ data = {
     "scope": "https://api.ebay.com/oauth/api_scope"
 }
 
+print("🔄 eBay Access Token 요청 중...")
+
 response = requests.post(TOKEN_URL, headers=headers, data=data)
+
+# 📌 응답 디버깅 추가
+print(f"🔍 응답 상태 코드: {response.status_code}")
+print(f"📌 응답 헤더: {response.headers}")
+print(f"📌 응답 내용: {response.text}")
 
 if response.status_code == 200:
     new_access_token = response.json().get("access_token")
@@ -44,5 +56,4 @@ if response.status_code == 200:
         print(new_access_token)
 else:
     print(f"❌ Access Token 갱신 실패: {response.status_code}")
-    print(f"📌 응답 내용: {response.text}")  # 🛠 디버깅 추가
     exit(1)
