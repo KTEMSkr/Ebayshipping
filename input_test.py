@@ -1,80 +1,69 @@
 import requests
-import base64
-import time
+import os
 
-# ✅ eBay API Credentials (개인 환경에 맞게 수정)
-CLIENT_ID = "your_client_id"
-CLIENT_SECRET = "your_client_secret"
+# 🔹 eBay API 요청 URL (주문 목록 가져오기)
+EBAY_API_URL = "https://api.ebay.com/sell/fulfillment/v1/order?limit=50"
 
-# ✅ eBay Token 요청 URL
-TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
+def refresh_ebay_user_token():
+    """eBay User Token을 갱신하는 함수"""
+    EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
+    EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
+    EBAY_REFRESH_TOKEN = os.getenv("EBAY_USER_TOKEN")  # 갱신용 토큰
 
-# ✅ 전역 변수 (초기화)
-ACCESS_TOKEN = None
-TOKEN_EXPIRY = 0  # 토큰 만료 시간 저장 (초 단위)
+    if not all([EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN]):
+        print("❌ eBay API 인증 정보가 없습니다.")
+        return None
 
-def fetch_new_token():
-    """새로운 eBay Access Token을 요청하는 함수"""
-    global ACCESS_TOKEN, TOKEN_EXPIRY
+    # 🔹 eBay OAuth 토큰 요청 URL
+    TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 
-    # ✅ Base64 인코딩 (client_id:client_secret)
-    auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
-
-    # ✅ 요청 헤더
+    # 🔹 요청 헤더
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": f"Basic {auth_header}"
+        "Authorization": f"Basic {requests.auth._basic_auth_str(EBAY_CLIENT_ID, EBAY_CLIENT_SECRET)}"
     }
 
-    # ✅ 요청 데이터
+    # 🔹 요청 데이터
     data = {
-        "grant_type": "client_credentials",
+        "grant_type": "refresh_token",
+        "refresh_token": EBAY_REFRESH_TOKEN,
         "scope": "https://api.ebay.com/oauth/api_scope"
     }
 
-    # ✅ eBay Access Token 요청
+    # 🔹 eBay API 호출 (토큰 갱신)
     response = requests.post(TOKEN_URL, headers=headers, data=data)
 
-    # ✅ 응답 확인
     if response.status_code == 200:
-        json_response = response.json()
-        ACCESS_TOKEN = json_response["access_token"]
-        TOKEN_EXPIRY = time.time() + json_response["expires_in"] - 60  # 60초 여유 두고 만료 설정
-        print("✅ 새로운 Access Token 발급 완료!")
-        return ACCESS_TOKEN
+        new_access_token = response.json().get("access_token")
+        print("✅ eBay Access Token 갱신 완료!")
+        return new_access_token
     else:
-        print("❌ Access Token 요청 실패:", response.text)
+        print(f"❌ Access Token 갱신 실패: {response.text}")
         return None
 
-def get_access_token():
-    """API 호출 전 항상 최신 Access Token을 가져오는 함수"""
-    global ACCESS_TOKEN, TOKEN_EXPIRY
+# ✅ 갱신된 Access Token 가져오기
+ACCESS_TOKEN = refresh_ebay_user_token()
 
-    if ACCESS_TOKEN is None or time.time() > TOKEN_EXPIRY:
-        print("🔄 Access Token이 만료됨. 새로 발급 중...")
-        return fetch_new_token()
-    
-    return ACCESS_TOKEN
-
-# ✅ eBay API 호출 예제 (토큰 자동 갱신 적용)
-def fetch_ebay_orders():
-    """eBay 주문 정보를 가져오는 함수"""
-    url = "https://api.ebay.com/sell/fulfillment/v1/order?limit=50"
-
+if ACCESS_TOKEN:
     headers = {
-        "Authorization": f"Bearer {get_access_token()}",  # 🔄 항상 최신 토큰 사용
-        "Content-Type": "application/json",
-        "Accept": "application/json"
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json"
     }
 
-    response = requests.get(url, headers=headers)
+    # ✅ eBay API에서 주문 목록 가져오기
+    response = requests.get(EBAY_API_URL, headers=headers)
 
     if response.status_code == 200:
-        print("✅ eBay API 호출 성공")
-        return response.json()
-    else:
-        print(f"❌ eBay API 호출 실패 (상태 코드: {response.status_code}):", response.text)
-        return None
+        orders = response.json().get("orders", [])
+        print(f"✅ {len(orders)}개의 주문을 가져왔습니다.")
 
-# ✅ 실행 예제
-fetch_ebay_orders()
+        # 주문 정보 출력
+        for order in orders:
+            print(f"\n🔹 주문 ID: {order.get('orderId')}")
+            print(f"   - 생성일: {order.get('creationDate')}")
+            print(f"   - 결제 상태: {order.get('orderPaymentStatus')}")
+            print(f"   - 배송 상태: {order.get('orderFulfillmentStatus')}")
+            print(f"   - 구매자: {order.get('buyer', {}).get('username')}")
+            print(f"   - 총 결제 금액: {order.get('pricingSummary', {}).get('total', {}).get('value')} {order.get('pricingSummary', {}).get('total', {}).get('currency')}")
+    else:
+        print(f"❌ eBay API 호출 실패 (상태 코드: {response.status_code}): {response.text}")
