@@ -21,6 +21,9 @@ jobs:
       - name: 필요한 패키지 설치
         run: pip install requests requests-oauthlib
 
+      - name: 환경 변수 확인 (디버깅용)
+        run: env | grep EBAY  # ✅ 환경 변수 로드 여부 확인
+
       - name: eBay API에서 주문 가져오기
         env:
           EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
