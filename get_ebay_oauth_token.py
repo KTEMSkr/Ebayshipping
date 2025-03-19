@@ -2,30 +2,32 @@ import os
 import requests
 import base64
 
-# ✅ GitHub Actions 환경 변수에서 eBay API 인증 정보 가져오기
+# ✅ 환경 변수 불러오기 (GitHub Secrets에서 가져옴)
 EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
 EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
-EBAY_ENVIRONMENT = os.getenv("EBAY_ENVIRONMENT", "PRODUCTION").upper()  # 기본값: PRODUCTION
+EBAY_REFRESH_TOKEN = os.getenv("EBAY_REFRESH_TOKEN")
 
-if not all([EBAY_CLIENT_ID, EBAY_CLIENT_SECRET]):
+if not all([EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN]):
     print("❌ eBay API 인증 정보가 없습니다. 환경 변수를 확인하세요.")
     exit(1)
-
-# ✅ eBay API URL 설정 (Production / Sandbox)
-TOKEN_URL = f"https://api.ebay.com/identity/v1/oauth2/token" if EBAY_ENVIRONMENT == "PRODUCTION" \
-    else "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
 
 # ✅ Basic Auth를 Base64로 인코딩
 auth_string = f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}"
 auth_encoded = base64.b64encode(auth_string.encode()).decode()
 
+# ✅ eBay OAuth 토큰 요청 URL
+TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
+
+# ✅ 헤더
 headers = {
     "Content-Type": "application/x-www-form-urlencoded",
     "Authorization": f"Basic {auth_encoded}"
 }
 
+# ✅ 요청 데이터 (Auth'n'Auth 방식)
 data = {
-    "grant_type": "client_credentials",
+    "grant_type": "refresh_token",
+    "refresh_token": EBAY_REFRESH_TOKEN,
     "scope": "https://api.ebay.com/oauth/api_scope"
 }
 
@@ -36,7 +38,7 @@ if response.status_code == 200:
     new_access_token = response.json().get("access_token")
     print("✅ eBay Access Token 갱신 완료!")
 
-    # ✅ GitHub Actions 환경 변수(GITHUB_ENV)에 저장
+    # ✅ GitHub Actions 환경에서는 `GITHUB_ENV`에 저장
     if os.getenv("GITHUB_ENV"):
         with open(os.getenv("GITHUB_ENV"), "a") as github_env:
             github_env.write(f"EBAY_USER_TOKEN={new_access_token}\n")
