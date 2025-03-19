@@ -18,7 +18,7 @@ auth = OAuth1(
     resource_owner_key=EBAY_USER_TOKEN
 )
 
-# API 요청 헤더
+# API 요청 헤더 (JSON 응답을 받도록 설정)
 headers = {
     "Content-Type": "application/json",
     "Accept": "application/json"
@@ -35,11 +35,13 @@ response = requests.get(EBAY_API_URL, headers=headers, params=params, auth=auth)
 
 # 응답 처리
 if response.status_code == 200:
-    orders_data = response.json()  # JSON 변환
-    print("✅ 이베이 API 연결 성공!")
-
-    # JSON을 보기 좋게 출력
-    print(json.dumps(orders_data, indent=2, ensure_ascii=False))
+    try:
+        orders_data = response.json()  # JSON 변환
+        print("✅ 이베이 API 연결 성공!")
+        print(json.dumps(orders_data, indent=2, ensure_ascii=False))  # JSON 보기 좋게 출력
+    except json.JSONDecodeError:
+        print("❌ 응답을 JSON으로 변환할 수 없습니다. 원본 응답:")
+        print(response.text)
 else:
     print(f"❌ 이베이 API 요청 실패: {response.status_code}")
     print(response.text)
