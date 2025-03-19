@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 * * * *"  # ✅ 매시간 정각 실행
+    - cron: "0 */2 * * *"  # ✅ 2시간마다 실행 (매 2시간 정각)
   workflow_dispatch:  # ✅ 수동 실행 가능
 
 jobs:
@@ -22,14 +22,35 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: 📦 Install Dependencies (requests, dotenv)
+      - name: 📦 Install Dependencies
         run: pip install requests python-dotenv
 
       - name: 🔑 Fetch New eBay OAuth Token
         env:
           EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
           EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
-        run: python get_ebay_oauth_token.py
+          EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
+        run: |
+          echo "🔄 eBay Access Token 갱신 중..."
+          TOKEN_URL="https://api.ebay.com/identity/v1/oauth2/token"
+          
+          RESPONSE=$(curl -s -X POST $TOKEN_URL \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Authorization: Basic $(echo -n "${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}" | base64)" \
+            --data-urlencode "grant_type=refresh_token" \
+            --data-urlencode "refresh_token=${EBAY_REFRESH_TOKEN}" \
+            --data-urlencode "scope=https://api.ebay.com/oauth/api_scope")
+          
+          ACCESS_TOKEN=$(echo $RESPONSE | jq -r '.access_token')
+
+          if [[ "$ACCESS_TOKEN" == "null" || -z "$ACCESS_TOKEN" ]]; then
+            echo "❌ Access Token 갱신 실패: $RESPONSE"
+            exit 1
+          fi
+
+          echo "✅ eBay Access Token 갱신 완료!"
+          echo "::add-mask::$ACCESS_TOKEN"
+          echo "EBAY_USER_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
 
   fetch-ebay-orders:
     name: "📦 Fetch eBay Orders"
@@ -45,10 +66,10 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: 📦 Install Dependencies (requests, dotenv)
-        run: pip install requests python-dotenv
+      - name: 📦 Install Dependencies
+        run: pip install requests python-dotenv jq
 
       - name: 📦 Fetch eBay Order Data
         env:
-          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+          EBAY_USER_TOKEN: ${{ env.EBAY_USER_TOKEN }}  # ✅ 갱신된 토큰 사용
         run: python input_test.py
