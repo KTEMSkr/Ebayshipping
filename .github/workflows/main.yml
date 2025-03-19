@@ -25,12 +25,6 @@ jobs:
       - name: 📦 Install Dependencies
         run: pip install requests python-dotenv jq
 
-      - name: 🔍 Debug GitHub Secrets (보안 중요: 실행 후 제거)
-        run: |
-          echo "🔍 EBAY_CLIENT_ID=${{ secrets.EBAY_CLIENT_ID }}"
-          echo "🔍 EBAY_CLIENT_SECRET=${{ secrets.EBAY_CLIENT_SECRET }}"
-          echo "🔍 EBAY_REFRESH_TOKEN=${{ secrets.EBAY_REFRESH_TOKEN }}"
-
       - name: 🔑 Fetch New eBay OAuth Token
         env:
           EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
@@ -60,13 +54,13 @@ jobs:
           fi
 
           echo "✅ eBay Access Token 갱신 완료!"
-          echo "::add-mask::$ACCESS_TOKEN"  # ✅ GitHub Actions에서 보안 마스킹 처리
-          echo "EBAY_USER_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV  # ✅ 환경 변수에 저장
+          echo "::add-mask::$ACCESS_TOKEN"
+          echo "EBAY_USER_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
 
   fetch-ebay-orders:
     name: "📦 Fetch eBay Orders"
     runs-on: ubuntu-latest
-    needs: refresh-ebay-token  # ✅ OAuth 토큰 갱신 후 실행
+    needs: refresh-ebay-token
 
     steps:
       - name: 📥 Checkout Repository
@@ -82,5 +76,5 @@ jobs:
 
       - name: 📦 Fetch eBay Order Data
         env:
-          EBAY_USER_TOKEN: ${{ env.EBAY_USER_TOKEN }}  # ✅ 갱신된 토큰 사용
+          EBAY_USER_TOKEN: ${{ env.EBAY_USER_TOKEN }}
         run: python input_test.py
