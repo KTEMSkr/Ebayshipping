@@ -15,16 +15,13 @@ if not all([EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN]):
 auth_string = f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}"
 auth_encoded = base64.b64encode(auth_string.encode()).decode()
 
-# ✅ eBay OAuth 토큰 요청 URL
 TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 
-# ✅ 헤더
 headers = {
     "Content-Type": "application/x-www-form-urlencoded",
     "Authorization": f"Basic {auth_encoded}"
 }
 
-# ✅ 요청 데이터 (Auth'n'Auth 방식)
 data = {
     "grant_type": "refresh_token",
     "refresh_token": EBAY_REFRESH_TOKEN,
@@ -38,7 +35,7 @@ if response.status_code == 200:
     new_access_token = response.json().get("access_token")
     print("✅ eBay Access Token 갱신 완료!")
 
-    # ✅ GitHub Actions 환경에서는 `GITHUB_ENV`에 저장
+    # ✅ GitHub Actions 환경 변수로 설정
     if os.getenv("GITHUB_ENV"):
         with open(os.getenv("GITHUB_ENV"), "a") as github_env:
             github_env.write(f"EBAY_USER_TOKEN={new_access_token}\n")
