@@ -1,2 +1,0 @@
-- name: 🔍 환경 변수 확인
-        run: echo "EBAY_USER_TOKEN=${{ secrets.EBAY_USER_TOKEN }}"
