@@ -8,17 +8,17 @@ EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")  # Consumer Key (App ID)
 EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")  # Consumer Secret (Cert ID)
 EBAY_USER_TOKEN = os.getenv("EBAY_USER_TOKEN")  # eBay User Token (Auth’n’Auth 방식)
 
-# eBay Fulfillment API 엔드포인트 (최신 주문 가져오기)
+# eBay Fulfillment API 엔드포인트 (최신 주문 가져오기) - JSON 기반
 EBAY_API_URL = "https://api.ebay.com/sell/fulfillment/v1/order"
 
-# OAuth1 인증 설정 (Auth’n’Auth 방식 - Token Secret 없음)
+# OAuth1 인증 설정 (Auth’n’Auth 방식)
 auth = OAuth1(
     client_key=EBAY_CLIENT_ID,
     client_secret=EBAY_CLIENT_SECRET,
     resource_owner_key=EBAY_USER_TOKEN
 )
 
-# API 요청 헤더 (JSON 응답을 받도록 설정)
+# API 요청 헤더 (JSON 응답 받기)
 headers = {
     "Content-Type": "application/json",
     "Accept": "application/json"
