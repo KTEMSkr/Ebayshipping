@@ -1,31 +1,37 @@
-import requests
 import os
-import base64
+import requests
+from dotenv import load_dotenv, set_key
 
-# GitHub Secrets에서 Client ID, Client Secret 가져오기
+# ✅ .env 파일 로드
+load_dotenv()
+
+# ✅ 환경 변수 불러오기
 EBAY_CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
 EBAY_CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
+EBAY_REFRESH_TOKEN = os.getenv("EBAY_REFRESH_TOKEN")
 
-# Base64 인코딩 (Client ID:Client Secret)
-credentials = f"{EBAY_CLIENT_ID}:{EBAY_CLIENT_SECRET}"
-encoded_credentials = base64.b64encode(credentials.encode()).decode()
+TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 
-# OAuth 토큰 요청
-url = "https://api.ebay.com/identity/v1/oauth2/token"
 headers = {
     "Content-Type": "application/x-www-form-urlencoded",
-    "Authorization": f"Basic {encoded_credentials}",
+    "Authorization": f"Basic {requests.auth._basic_auth_str(EBAY_CLIENT_ID, EBAY_CLIENT_SECRET)}"
 }
-body = {
-    "grant_type": "client_credentials",
+
+data = {
+    "grant_type": "refresh_token",
+    "refresh_token": EBAY_REFRESH_TOKEN,
     "scope": "https://api.ebay.com/oauth/api_scope"
 }
 
-response = requests.post(url, headers=headers, data=body)
+response = requests.post(TOKEN_URL, headers=headers, data=data)
 
 if response.status_code == 200:
-    token_data = response.json()
-    ACCESS_TOKEN = token_data["access_token"]
-    print(f"✅ eBay OAuth 토큰 발급 성공: {ACCESS_TOKEN}")
+    new_access_token = response.json().get("access_token")
+    print("✅ eBay Access Token 갱신 완료!")
+
+    # ✅ .env 파일에 새 토큰 저장
+    set_key(".env", "EBAY_USER_TOKEN", new_access_token)
+
+    print("🔹 새로운 토큰이 .env 파일에 저장되었습니다.")
 else:
-    print(f"❌ eBay OAuth 토큰 발급 실패: {response.text}")
+    print(f"❌ Access Token 갱신 실패: {response.text}")
