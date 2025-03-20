@@ -1,43 +1,42 @@
 import requests
-import os
 import base64
+import os
 
-# ✅ 환경 변수에서 eBay API 키 가져오기
+# ✅ 환경 변수에서 가져오기
 CLIENT_ID = os.getenv("EBAY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("EBAY_CLIENT_SECRET")
 
+# ✅ Client ID / Secret이 없으면 에러 발생
 if not CLIENT_ID or not CLIENT_SECRET:
-    raise ValueError("❌ ERROR: `EBAY_CLIENT_ID` 또는 `EBAY_CLIENT_SECRET`이 설정되지 않았습니다!")
+    raise ValueError("❌ ERROR: EBAY_CLIENT_ID 또는 EBAY_CLIENT_SECRET이 설정되지 않음!")
 
-# ✅ eBay OAuth 토큰 요청 URL
+# ✅ eBay OAuth Token 요청 URL
 TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 
-# ✅ Basic Auth 헤더 생성
-auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+# ✅ Basic 인증을 위한 Base64 인코딩
+credentials = f"{CLIENT_ID}:{CLIENT_SECRET}"
+encoded_credentials = base64.b64encode(credentials.encode()).decode()
 
+# ✅ 요청 헤더
 headers = {
-    "Authorization": f"Basic {auth_header}",
-    "Content-Type": "application/x-www-form-urlencoded"
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Authorization": f"Basic {encoded_credentials}"
 }
 
-# ✅ 🚀 Scope 추가: `sell.fulfillment.readonly`, `sell.fulfillment.readwrite`
+# ✅ **Scope 추가 (수정된 부분)**
 data = {
     "grant_type": "client_credentials",
-    "scope": "https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly https://api.ebay.com/oauth/api_scope/sell.fulfillment.readwrite"
+    "scope": "https://api.ebay.com/oauth/api_scope/sell.fulfillment"
 }
 
-# ✅ eBay OAuth 토큰 요청
+# ✅ 요청 실행
 response = requests.post(TOKEN_URL, headers=headers, data=data)
 
+# ✅ 응답 확인
 if response.status_code == 200:
-    token_info = response.json()
-    access_token = token_info["access_token"]
-    expires_in = token_info["expires_in"]
-
-    print(f"✅ eBay OAuth 토큰 발급 성공: {access_token[:10]}********** (유효 기간: {expires_in}초)")
-
-    # ✅ GitHub Actions에서 사용하려면 환경 변수로 저장
-    print(f"::set-output name=ebay_token::{access_token}")
-
+    token_data = response.json()
+    ACCESS_TOKEN = token_data["access_token"]
+    print("✔️ eBay OAuth 토큰 발급 성공:", ACCESS_TOKEN)
 else:
-    print("❌ eBay OAuth 토큰 발급 실패:", response.json())
+    print("❌ eBay OAuth 토큰 발급 실패:", response.status_code)
+    print(f"📌 응답 내용: {response.text}")
