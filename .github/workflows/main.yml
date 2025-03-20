@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 */2 * * *"  # ✅ 2시간마다 실행
+    - cron: "0 */2 * * *"  # ✅ 2시간마다 실행 (매 2시간 정각)
   workflow_dispatch:  # ✅ 수동 실행 가능
 
 jobs:
@@ -47,7 +47,7 @@ jobs:
           python-version: "3.10"
 
       - name: 📦 Install Dependencies
-        run: pip install requests python-dotenv
+        run: pip install requests python-dotenv jq
 
       - name: 📦 Fetch eBay Order Data
         env:
